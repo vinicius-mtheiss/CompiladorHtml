@@ -4,7 +4,7 @@ Projeto acadêmico completo para análise estrutural de documentos HTML utilizan
 
 ## Funcionalidades
 
-- Leitura de arquivos `.html`, `.htm` e `.txt` linha a linha (ignorando linhas em branco)
+- Leitura de arquivos `.html`, `.htm` e `.txt` linha a linha (linhas em branco não geram tags e mantêm a numeração original)
 - Reconhecimento de tags de abertura, fechamento e autofechamento (com atributos)
 - Comparação de tags **case-insensitive**
 - Tags singleton não empilhadas: `meta`, `base`, `br`, `col`, `command`, `embed`, `hr`, `img`, `input`, `link`, `param`, `source`, `!doctype`

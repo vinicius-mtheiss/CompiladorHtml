@@ -28,7 +28,8 @@ public class HierarchyBuilder {
 
             switch (tag.getTipo()) {
                 case ABERTURA:
-                    HtmlNode novoNo = new HtmlNode(TagUtils.normalizar(tag.getNome()), null);
+                    HtmlNode pai = pilhaNos.isEmpty() ? null : pilhaNos.peek();
+                    HtmlNode novoNo = new HtmlNode(TagUtils.normalizar(tag.getNome()), pai);
                     if (raiz == null) {
                         raiz = novoNo;
                     } else if (!pilhaNos.isEmpty()) {
@@ -38,7 +39,9 @@ public class HierarchyBuilder {
                     break;
 
                 case AUTOFECHAMENTO:
-                    HtmlNode noAutofechamento = new HtmlNode(TagUtils.normalizar(tag.getNome()), null);
+                    HtmlNode paiDoSingleton = pilhaNos.isEmpty() ? null : pilhaNos.peek();
+                    HtmlNode noAutofechamento = new HtmlNode(
+                            TagUtils.normalizar(tag.getNome()), paiDoSingleton);
                     if (raiz == null) {
                         raiz = noAutofechamento;
                     } else if (!pilhaNos.isEmpty()) {

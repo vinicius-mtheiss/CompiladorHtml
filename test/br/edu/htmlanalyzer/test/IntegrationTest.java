@@ -20,6 +20,7 @@ public class IntegrationTest {
         testarArquivoInvalido(base + "tags_nao_finalizadas.html");
         testarArquivoInvalido(base + "tag_malformada.html");
         testarHierarquiaApenasQuandoValido(base + "valido.html");
+        testarFrequenciaSemFechamentos(base + "valido.html");
 
         System.out.println("IntegrationTest: " + (falhas == 0 ? "TODOS PASSARAM" : falhas + " FALHA(S)"));
         if (falhas > 0) {
@@ -50,6 +51,17 @@ public class IntegrationTest {
         assertTrue(hierarquia.contains("html"), "Hierarquia contém html");
         assertTrue(hierarquia.contains("body"), "Hierarquia contém body");
         assertTrue(hierarquia.contains("div"), "Hierarquia contém div");
+    }
+
+    private static void testarFrequenciaSemFechamentos(String caminho) throws Exception {
+        HtmlAnalyzerService service = new HtmlAnalyzerService();
+        AnalysisResult resultado = service.analisar(new File(caminho).getPath());
+        int frequenciaHtml = resultado.getEstatisticas().stream()
+                .filter(estatistica -> "html".equals(estatistica.getTag()))
+                .findFirst()
+                .get()
+                .getFrequencia();
+        assertTrue(frequenciaHtml == 1, "Fechamentos não entram na frequência");
     }
 
     private static void assertTrue(boolean condicao, String mensagem) {

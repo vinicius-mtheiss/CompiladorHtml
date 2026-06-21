@@ -27,6 +27,10 @@ public class StatisticsService {
                 continue;
             }
 
+            if (tag.getTipo() == TagType.FECHAMENTO) {
+                continue;
+            }
+
             String chave = TagUtils.normalizar(tag.getNome());
             ContadorTag contador = contadores.computeIfAbsent(chave, ContadorTag::new);
             contador.registrar(tag);
@@ -50,9 +54,7 @@ public class StatisticsService {
         private final String tag;
         private int frequencia;
         private int primeiraOcorrencia;
-        private int aberturas;
-        private int fechamentos;
-        private int autofechamentos;
+        private TagType tipo;
 
         ContadorTag(String tag) {
             this.tag = tag;
@@ -64,34 +66,11 @@ public class StatisticsService {
             frequencia++;
             primeiraOcorrencia = Math.min(primeiraOcorrencia, parsedTag.getLinha());
 
-            switch (parsedTag.getTipo()) {
-                case ABERTURA:
-                    aberturas++;
-                    break;
-                case FECHAMENTO:
-                    fechamentos++;
-                    break;
-                case AUTOFECHAMENTO:
-                    autofechamentos++;
-                    break;
-                default:
-                    break;
-            }
+            tipo = parsedTag.getTipo();
         }
 
         TagStatistics toStatistics() {
-            TagType tipoPredominante = determinarTipo();
-            return new TagStatistics(tag, frequencia, tipoPredominante, primeiraOcorrencia);
-        }
-
-        private TagType determinarTipo() {
-            if (aberturas >= fechamentos && aberturas >= autofechamentos && aberturas > 0) {
-                return TagType.ABERTURA;
-            }
-            if (fechamentos >= aberturas && fechamentos >= autofechamentos && fechamentos > 0) {
-                return TagType.FECHAMENTO;
-            }
-            return TagType.AUTOFECHAMENTO;
+            return new TagStatistics(tag, frequencia, tipo, primeiraOcorrencia);
         }
     }
 }

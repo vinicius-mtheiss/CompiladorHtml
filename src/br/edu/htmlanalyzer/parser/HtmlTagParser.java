@@ -6,19 +6,11 @@ import br.edu.htmlanalyzer.util.TagUtils;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Extrai tags HTML de linhas de texto, ignorando atributos na validação estrutural.
  */
 public class HtmlTagParser {
-
-    // Captura tags HTML: abertura, fechamento, comentários e declarações.
-    private static final Pattern PADRAO_TAG = Pattern.compile(
-            "<(!--[\\s\\S]*?--|!DOCTYPE[^>]*>|/?[a-zA-Z][a-zA-Z0-9:-]*(?:\\s+[^>]*)?/?)>",
-            Pattern.CASE_INSENSITIVE
-    );
 
     /**
      * Extrai todas as tags válidas e malformadas de uma lista de linhas.
@@ -29,6 +21,9 @@ public class HtmlTagParser {
         for (int indice = 0; indice < linhas.size(); indice++) {
             String linha = linhas.get(indice);
             int numeroLinha = indice + 1;
+            if (linha.trim().isEmpty()) {
+                continue;
+            }
             int posicao = 0;
 
             while (posicao < linha.length()) {
@@ -37,7 +32,7 @@ public class HtmlTagParser {
                     break;
                 }
 
-                int fimTag = linha.indexOf('>', inicioTag);
+                int fimTag = encontrarFimDaTag(linha, inicioTag);
                 if (fimTag < 0) {
                     tags.add(new ParsedTag("?", TagType.ABERTURA, numeroLinha,
                             linha.substring(inicioTag)));
@@ -46,21 +41,9 @@ public class HtmlTagParser {
 
                 String trecho = linha.substring(inicioTag, fimTag + 1);
 
-                if (isDeclaracaoDoctype(trecho)) {
-                    tags.add(new ParsedTag("!doctype", TagType.AUTOFECHAMENTO, numeroLinha, trecho));
-                    posicao = fimTag + 1;
-                    continue;
-                }
-
-                Matcher matcher = PADRAO_TAG.matcher(trecho);
-
-                if (matcher.matches()) {
-                    ParsedTag tag = interpretarTag(trecho, numeroLinha);
-                    if (tag != null) {
-                        tags.add(tag);
-                    }
-                } else {
-                    tags.add(new ParsedTag("?", TagType.ABERTURA, numeroLinha, trecho));
+                ParsedTag tag = interpretarTag(trecho, numeroLinha);
+                if (tag != null) {
+                    tags.add(tag);
                 }
 
                 posicao = fimTag + 1;
@@ -74,7 +57,13 @@ public class HtmlTagParser {
         String interno = trecho.substring(1, trecho.length() - 1).trim();
 
         if (interno.startsWith("!--")) {
-            return null; // Comentários são ignorados.
+            return interno.endsWith("--") ? null : tagMalformada(trecho, linha);
+        }
+
+        if (interno.regionMatches(true, 0, "!doctype", 0, 8)) {
+            return interno.matches("(?i)!doctype(?:\\s+[^<>]+)?")
+                    ? new ParsedTag("!doctype", TagType.AUTOFECHAMENTO, linha, trecho)
+                    : tagMalformada(trecho, linha);
         }
 
         boolean fechamento = interno.startsWith("/");
@@ -89,11 +78,15 @@ public class HtmlTagParser {
 
         String nome = extrairNomeTag(interno);
         if (nome.isEmpty()) {
-            return new ParsedTag("?", TagType.ABERTURA, linha, trecho);
+            return tagMalformada(trecho, linha);
         }
 
-        if (nome.startsWith("!")) {
-            nome = "!doctype";
+        String restante = interno.substring(nome.length()).trim();
+        if (fechamento && (!restante.isEmpty() || autofechamento)) {
+            return tagMalformada(trecho, linha);
+        }
+        if (!fechamento && restante.contains("<")) {
+            return tagMalformada(trecho, linha);
         }
 
         TagType tipo;
@@ -108,6 +101,27 @@ public class HtmlTagParser {
         return new ParsedTag(nome, tipo, linha, trecho);
     }
 
+    private int encontrarFimDaTag(String linha, int inicio) {
+        char aspas = 0;
+        for (int i = inicio + 1; i < linha.length(); i++) {
+            char caractere = linha.charAt(i);
+            if (aspas != 0) {
+                if (caractere == aspas) {
+                    aspas = 0;
+                }
+            } else if (caractere == '\'' || caractere == '"') {
+                aspas = caractere;
+            } else if (caractere == '>') {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private ParsedTag tagMalformada(String trecho, int linha) {
+        return new ParsedTag("?", TagType.ABERTURA, linha, trecho);
+    }
+
     /**
      * Extrai apenas o nome da tag, descartando atributos.
      */
@@ -116,16 +130,11 @@ public class HtmlTagParser {
             return "";
         }
 
-        if (conteudoTag.toUpperCase().startsWith("!DOCTYPE")) {
-            return "!doctype";
-        }
-
         int fimNome = 0;
         while (fimNome < conteudoTag.length()
                 && (Character.isLetterOrDigit(conteudoTag.charAt(fimNome))
                 || conteudoTag.charAt(fimNome) == ':'
-                || conteudoTag.charAt(fimNome) == '-'
-                || conteudoTag.charAt(fimNome) == '!')) {
+                || conteudoTag.charAt(fimNome) == '-')) {
             fimNome++;
         }
 
@@ -136,10 +145,4 @@ public class HtmlTagParser {
         return conteudoTag.substring(0, fimNome);
     }
 
-    private boolean isDeclaracaoDoctype(String trecho) {
-        return trecho.length() > 2
-                && trecho.startsWith("<!")
-                && trecho.substring(1).trim().toUpperCase().startsWith("!DOCTYPE")
-                && trecho.endsWith(">");
-    }
 }

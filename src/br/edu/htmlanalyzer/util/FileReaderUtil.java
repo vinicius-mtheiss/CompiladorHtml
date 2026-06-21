@@ -17,7 +17,8 @@ public final class FileReaderUtil {
     }
 
     /**
-     * Lê o arquivo ignorando linhas em branco.
+     * Lê o arquivo linha a linha. Linhas em branco são preservadas para que a
+     * numeração exibida nos erros corresponda ao arquivo selecionado.
      */
     public static List<String> lerLinhas(String caminho) throws IOException {
         List<String> linhas = new ArrayList<>();
@@ -34,9 +35,7 @@ public final class FileReaderUtil {
         try (BufferedReader reader = new BufferedReader(new FileReader(arquivo))) {
             String linha;
             while ((linha = reader.readLine()) != null) {
-                if (!linha.trim().isEmpty()) {
-                    linhas.add(linha);
-                }
+                linhas.add(linha);
             }
         }
         return linhas;

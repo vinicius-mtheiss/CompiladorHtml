@@ -7,8 +7,9 @@ import br.edu.htmlanalyzer.model.ParsedTag;
 import br.edu.htmlanalyzer.model.TagType;
 import br.edu.htmlanalyzer.util.TagUtils;
 
-import java.util.ArrayList;
+import java.util.ArrayDeque;
 import java.util.List;
+import java.util.Queue;
 
 /**
  * Valida o balanceamento estrutural de tags HTML utilizando uma Pilha.
@@ -30,14 +31,14 @@ public class HtmlValidator {
      * Valida a sequência de tags e retorna a lista de erros encontrados.
      */
     public List<AnalysisError> validar(List<ParsedTag> tags) {
-        List<AnalysisError> erros = new ArrayList<>();
+        Queue<AnalysisError> erros = new ArrayDeque<>();
         Stack<TagAberta> pilha = new Stack<>();
 
         for (ParsedTag tag : tags) {
             if ("?".equals(tag.getNome())) {
                 erros.add(new AnalysisError(
                         ErrorType.TAG_MALFORMADA,
-                        "Tag malformada detectada: " + tag.getOriginal(),
+                        "Foi encontrada uma tag malformada.",
                         tag.getLinha(),
                         tag.getOriginal()
                 ));
@@ -57,22 +58,23 @@ public class HtmlValidator {
                     if (pilha.isEmpty()) {
                         erros.add(new AnalysisError(
                                 ErrorType.TAG_FINAL_SEM_ABERTURA,
-                                "Tag de fechamento sem tag de abertura correspondente.",
+                                String.format("Foi encontrada a tag final </%s>, mas não existe tag inicial correspondente.",
+                                        tag.getNome()),
                                 tag.getLinha(),
                                 tag.getNome()
                         ));
                     } else {
-                        TagAberta aberta = pilha.pop();
+                        TagAberta aberta = pilha.peek();
                         if (!TagUtils.tagsEquivalentes(aberta.nome, tag.getNome())) {
                             erros.add(new AnalysisError(
                                     ErrorType.TAG_FINAL_INESPERADA,
-                                    String.format("Esperava fechamento de <%s>, mas encontrou <%s>.",
-                                            aberta.nome, tag.getNome()),
+                                    String.format("Foi encontrada a tag final </%s>, mas era esperada a tag final </%s>.",
+                                            tag.getNome(), aberta.nome),
                                     tag.getLinha(),
                                     tag.getNome()
                             ));
-                            // Reempilha a tag aberta para continuar a verificação.
-                            pilha.push(aberta);
+                        } else {
+                            pilha.pop();
                         }
                     }
                     break;
@@ -82,16 +84,20 @@ public class HtmlValidator {
             }
         }
 
-        while (!pilha.isEmpty()) {
-            TagAberta tagAberta = pilha.pop();
-            erros.add(new AnalysisError(
-                    ErrorType.TAGS_NAO_FINALIZADAS,
-                    "Tag de abertura sem fechamento correspondente.",
-                    tagAberta.linha,
-                    tagAberta.nome
-            ));
+        if (!pilha.isEmpty()) {
+            StringBuilder esperadas = new StringBuilder();
+            int primeiraLinha = pilha.peek().linha;
+            while (!pilha.isEmpty()) {
+                if (esperadas.length() > 0) {
+                    esperadas.append(", ");
+                }
+                esperadas.append("</").append(pilha.pop().nome).append(">");
+            }
+            erros.add(new AnalysisError(ErrorType.TAGS_NAO_FINALIZADAS,
+                    "Faltam tags finais no arquivo. Tags esperadas: " + esperadas + ".",
+                    primeiraLinha, esperadas.toString()));
         }
 
-        return erros;
+        return new java.util.ArrayList<>(erros);
     }
 }

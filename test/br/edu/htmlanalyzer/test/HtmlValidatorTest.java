@@ -26,6 +26,8 @@ public class HtmlValidatorTest {
         testarSingletonNaoEmpilhada();
         testarCaseInsensitive();
         testarAtributosIgnorados();
+        testarAtributoComSinalDeMaior();
+        testarNumeracaoComLinhaEmBranco();
 
         System.out.println("HtmlValidatorTest: " + (falhas == 0 ? "TODOS PASSARAM" : falhas + " FALHA(S)"));
         if (falhas > 0) {
@@ -114,6 +116,24 @@ public class HtmlValidatorTest {
         );
         HtmlValidator validator = new HtmlValidator();
         assertTrue(validator.validar(tags).isEmpty(), "Atributos ignorados na validação");
+    }
+
+    private static void testarNumeracaoComLinhaEmBranco() {
+        List<String> linhas = Arrays.asList("<html>", "", "</body>");
+        HtmlValidator validator = new HtmlValidator();
+        HtmlTagParser parser = new HtmlTagParser();
+        List<AnalysisError> erros = validator.validar(parser.extrairTags(linhas));
+        assertEquals(3, erros.get(0).getLinha(), "Linha em branco não altera numeração");
+        assertTrue(erros.get(0).getMensagem().contains("era esperada a tag final </html>"),
+                "Mensagem de tag final inesperada");
+    }
+
+    private static void testarAtributoComSinalDeMaior() {
+        List<String> linhas = Arrays.asList("<div data-text=\"a > b\"></div>");
+        HtmlValidator validator = new HtmlValidator();
+        HtmlTagParser parser = new HtmlTagParser();
+        assertTrue(validator.validar(parser.extrairTags(linhas)).isEmpty(),
+                "Atributos com > entre aspas são reconhecidos");
     }
 
     private static void assertTrue(boolean condicao, String mensagem) {

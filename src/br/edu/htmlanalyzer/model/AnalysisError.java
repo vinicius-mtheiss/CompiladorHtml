@@ -35,7 +35,8 @@ public class AnalysisError {
 
     @Override
     public String toString() {
-        return String.format("Linha %d | %s | Tag: %s | %s",
-                linha, tipo.getDescricao(), tag, mensagem);
+        return linha > 0
+                ? String.format("Erro na linha %d: %s", linha, mensagem)
+                : "Erro: " + mensagem;
     }
 }
