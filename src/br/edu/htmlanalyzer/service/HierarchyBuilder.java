@@ -13,6 +13,8 @@ import java.util.List;
  */
 public class HierarchyBuilder {
 
+    private static final String RAIZ_DOCUMENTO = "#document";
+
     /**
      * Monta a hierarquia a partir das tags parseadas.
      * Utiliza pilha auxiliar para rastrear o nó corrente.
@@ -30,11 +32,7 @@ public class HierarchyBuilder {
                 case ABERTURA:
                     HtmlNode pai = pilhaNos.isEmpty() ? null : pilhaNos.peek();
                     HtmlNode novoNo = new HtmlNode(TagUtils.normalizar(tag.getNome()), pai);
-                    if (raiz == null) {
-                        raiz = novoNo;
-                    } else if (!pilhaNos.isEmpty()) {
-                        pilhaNos.peek().adicionarFilho(novoNo);
-                    }
+                    raiz = anexarNo(raiz, pilhaNos, novoNo);
                     pilhaNos.push(novoNo);
                     break;
 
@@ -42,11 +40,7 @@ public class HierarchyBuilder {
                     HtmlNode paiDoSingleton = pilhaNos.isEmpty() ? null : pilhaNos.peek();
                     HtmlNode noAutofechamento = new HtmlNode(
                             TagUtils.normalizar(tag.getNome()), paiDoSingleton);
-                    if (raiz == null) {
-                        raiz = noAutofechamento;
-                    } else if (!pilhaNos.isEmpty()) {
-                        pilhaNos.peek().adicionarFilho(noAutofechamento);
-                    }
+                    raiz = anexarNo(raiz, pilhaNos, noAutofechamento);
                     break;
 
                 case FECHAMENTO:
@@ -62,5 +56,31 @@ public class HierarchyBuilder {
         }
 
         return raiz;
+    }
+
+    /**
+     * Insere um nó na árvore. Quando a pilha está vazia e já existe raiz,
+     * cria um nó virtual para agrupar múltiplos elementos no nível do documento.
+     */
+    private HtmlNode anexarNo(HtmlNode raiz, Stack<HtmlNode> pilhaNos, HtmlNode novoNo) {
+        if (raiz == null) {
+            return novoNo;
+        }
+        if (!pilhaNos.isEmpty()) {
+            pilhaNos.peek().adicionarFilho(novoNo);
+            return raiz;
+        }
+        HtmlNode documento = garantirRaizDocumento(raiz);
+        documento.adicionarFilho(novoNo);
+        return documento;
+    }
+
+    private HtmlNode garantirRaizDocumento(HtmlNode raiz) {
+        if (RAIZ_DOCUMENTO.equals(raiz.getTag())) {
+            return raiz;
+        }
+        HtmlNode documento = new HtmlNode(RAIZ_DOCUMENTO, null);
+        documento.adicionarFilho(raiz);
+        return documento;
     }
 }

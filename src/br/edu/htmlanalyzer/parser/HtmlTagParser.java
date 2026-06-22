@@ -12,45 +12,114 @@ import java.util.List;
  */
 public class HtmlTagParser {
 
+    private static final class TagExtraction {
+
+        private final String trecho;
+        private final int linhaInicio;
+        private final int indiceLinhaFinal;
+        private final int posicaoFinal;
+
+        private TagExtraction(String trecho, int linhaInicio, int indiceLinhaFinal, int posicaoFinal) {
+            this.trecho = trecho;
+            this.linhaInicio = linhaInicio;
+            this.indiceLinhaFinal = indiceLinhaFinal;
+            this.posicaoFinal = posicaoFinal;
+        }
+    }
+
     /**
      * Extrai todas as tags válidas e malformadas de uma lista de linhas.
      */
     public List<ParsedTag> extrairTags(List<String> linhas) {
         List<ParsedTag> tags = new ArrayList<>();
+        int indice = 0;
+        int posicao = 0;
 
-        for (int indice = 0; indice < linhas.size(); indice++) {
+        while (indice < linhas.size()) {
             String linha = linhas.get(indice);
-            int numeroLinha = indice + 1;
             if (linha.trim().isEmpty()) {
+                indice++;
+                posicao = 0;
                 continue;
             }
-            int posicao = 0;
 
-            while (posicao < linha.length()) {
-                int inicioTag = linha.indexOf('<', posicao);
-                if (inicioTag < 0) {
-                    break;
-                }
-
-                int fimTag = encontrarFimDaTag(linha, inicioTag);
-                if (fimTag < 0) {
-                    tags.add(new ParsedTag("?", TagType.ABERTURA, numeroLinha,
-                            linha.substring(inicioTag)));
-                    break;
-                }
-
-                String trecho = linha.substring(inicioTag, fimTag + 1);
-
-                ParsedTag tag = interpretarTag(trecho, numeroLinha);
-                if (tag != null) {
-                    tags.add(tag);
-                }
-
-                posicao = fimTag + 1;
+            if (posicao >= linha.length()) {
+                indice++;
+                posicao = 0;
+                continue;
             }
+
+            int inicioTag = linha.indexOf('<', posicao);
+            if (inicioTag < 0) {
+                indice++;
+                posicao = 0;
+                continue;
+            }
+
+            TagExtraction extracao = extrairTagCompleta(linhas, indice, inicioTag);
+
+            if (extracao.posicaoFinal < 0) {
+                tags.add(new ParsedTag("?", TagType.ABERTURA, extracao.linhaInicio, extracao.trecho));
+                if (extracao.indiceLinhaFinal > indice) {
+                    indice = extracao.indiceLinhaFinal + 1;
+                    posicao = 0;
+                } else {
+                    posicao = inicioTag + 1;
+                }
+                continue;
+            }
+
+            ParsedTag tag = interpretarTag(extracao.trecho, extracao.linhaInicio);
+            if (tag != null) {
+                tags.add(tag);
+            }
+
+            indice = extracao.indiceLinhaFinal;
+            posicao = extracao.posicaoFinal;
         }
 
         return tags;
+    }
+
+    private TagExtraction extrairTagCompleta(List<String> linhas, int indiceInicial, int inicioTag) {
+        String linha = linhas.get(indiceInicial);
+        int linhaInicio = indiceInicial + 1;
+        int fimTag = encontrarFimDaTag(linha, inicioTag);
+
+        if (fimTag >= 0) {
+            return new TagExtraction(
+                    linha.substring(inicioTag, fimTag + 1),
+                    linhaInicio,
+                    indiceInicial,
+                    fimTag + 1
+            );
+        }
+
+        StringBuilder trecho = new StringBuilder(linha.substring(inicioTag));
+        int indice = indiceInicial;
+
+        while (indice + 1 < linhas.size()) {
+            indice++;
+            String proxima = linhas.get(indice);
+            if (proxima.trim().startsWith("<")) {
+                return new TagExtraction(trecho.toString(), linhaInicio, indiceInicial, -1);
+            }
+
+            fimTag = encontrarFimDaTag(proxima, -1);
+            if (fimTag >= 0) {
+                trecho.append('\n').append(proxima, 0, fimTag + 1);
+                return new TagExtraction(
+                        trecho.toString(),
+                        linhaInicio,
+                        indice,
+                        fimTag + 1
+                );
+            }
+
+            trecho.append('\n').append(proxima);
+        }
+
+        return new TagExtraction(trecho.toString(), linhaInicio, indice, -1);
     }
 
     private ParsedTag interpretarTag(String trecho, int linha) {
@@ -103,7 +172,8 @@ public class HtmlTagParser {
 
     private int encontrarFimDaTag(String linha, int inicio) {
         char aspas = 0;
-        for (int i = inicio + 1; i < linha.length(); i++) {
+        int inicioBusca = inicio < 0 ? 0 : inicio + 1;
+        for (int i = inicioBusca; i < linha.length(); i++) {
             char caractere = linha.charAt(i);
             if (aspas != 0) {
                 if (caractere == aspas) {

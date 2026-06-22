@@ -28,6 +28,9 @@ public class HtmlValidatorTest {
         testarAtributosIgnorados();
         testarAtributoComSinalDeMaior();
         testarNumeracaoComLinhaEmBranco();
+        testarTagMultilinha();
+        testarTagAbertaNaoFechadaSemCascata();
+        testarVariasTagsAbertasNaoFechadas();
 
         System.out.println("HtmlValidatorTest: " + (falhas == 0 ? "TODOS PASSARAM" : falhas + " FALHA(S)"));
         if (falhas > 0) {
@@ -134,6 +137,53 @@ public class HtmlValidatorTest {
         HtmlTagParser parser = new HtmlTagParser();
         assertTrue(validator.validar(parser.extrairTags(linhas)).isEmpty(),
                 "Atributos com > entre aspas são reconhecidos");
+    }
+
+    private static void testarTagMultilinha() {
+        List<String> linhas = Arrays.asList(
+                "<html>", "<body>", "<form>",
+                "<input",
+                "type=\"text\"",
+                "id=\"titulo\"",
+                "required",
+                "placeholder=\" \"",
+                ">",
+                "<input type=\"radio\" name=\"status\" value=\"Lido\">",
+                "</form>", "</body>", "</html>"
+        );
+        HtmlValidator validator = new HtmlValidator();
+        HtmlTagParser parser = new HtmlTagParser();
+        assertTrue(validator.validar(parser.extrairTags(linhas)).isEmpty(),
+                "Tags input em múltiplas linhas devem ser reconhecidas");
+    }
+
+    private static void testarTagAbertaNaoFechadaSemCascata() {
+        List<String> linhas = Arrays.asList(
+                "<html>", "<body>", "<form>", "<ul>", "<li>", "</li>",
+                "</form>", "</body>", "</html>"
+        );
+        HtmlValidator validator = new HtmlValidator();
+        HtmlTagParser parser = new HtmlTagParser();
+        List<AnalysisError> erros = validator.validar(parser.extrairTags(linhas));
+        assertEquals(1, erros.size(), "Deve retornar apenas um erro");
+        assertEquals(ErrorType.TAGS_NAO_FINALIZADAS, erros.get(0).getTipo(), "Tipo correto");
+        assertEquals(4, erros.get(0).getLinha(), "Linha da abertura da ul");
+        assertTrue(erros.get(0).getMensagem().contains("Falta a tag final </ul> após a linha 4"),
+                "Mensagem aponta a tag não fechada");
+    }
+
+    private static void testarVariasTagsAbertasNaoFechadas() {
+        List<String> linhas = Arrays.asList(
+                "<html>", "<body>", "<form>", "<ul>", "<ul>", "</form>", "</body>", "</html>"
+        );
+        HtmlValidator validator = new HtmlValidator();
+        HtmlTagParser parser = new HtmlTagParser();
+        List<AnalysisError> erros = validator.validar(parser.extrairTags(linhas));
+        assertEquals(2, erros.size(), "Deve retornar um erro para cada ul não fechada");
+        assertEquals(5, erros.get(0).getLinha(), "Primeira ul interna");
+        assertEquals(4, erros.get(1).getLinha(), "Segunda ul externa");
+        assertTrue(erros.get(0).getMensagem().contains("</ul>"), "Erro aponta ul");
+        assertTrue(erros.get(1).getMensagem().contains("</ul>"), "Erro aponta ul");
     }
 
     private static void assertTrue(boolean condicao, String mensagem) {

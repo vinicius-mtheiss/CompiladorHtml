@@ -7,9 +7,7 @@ import br.edu.htmlanalyzer.model.ParsedTag;
 import br.edu.htmlanalyzer.model.TagType;
 import br.edu.htmlanalyzer.util.TagUtils;
 
-import java.util.ArrayDeque;
 import java.util.List;
-import java.util.Queue;
 
 /**
  * Valida o balanceamento estrutural de tags HTML utilizando uma Pilha.
@@ -29,9 +27,11 @@ public class HtmlValidator {
 
     /**
      * Valida a sequência de tags e retorna a lista de erros encontrados.
+     * Interrompe apenas em fechamentos inválidos; tags não finalizadas
+     * são listadas todas antes de continuar ou ao final do arquivo.
      */
     public List<AnalysisError> validar(List<ParsedTag> tags) {
-        Queue<AnalysisError> erros = new ArrayDeque<>();
+        List<AnalysisError> erros = new java.util.ArrayList<>();
         Stack<TagAberta> pilha = new Stack<>();
 
         for (ParsedTag tag : tags) {
@@ -42,7 +42,7 @@ public class HtmlValidator {
                         tag.getLinha(),
                         tag.getOriginal()
                 ));
-                continue;
+                return erros;
             }
 
             switch (tag.getTipo()) {
@@ -51,7 +51,6 @@ public class HtmlValidator {
                     break;
 
                 case AUTOFECHAMENTO:
-                    // Tags singleton não são empilhadas.
                     break;
 
                 case FECHAMENTO:
@@ -63,19 +62,30 @@ public class HtmlValidator {
                                 tag.getLinha(),
                                 tag.getNome()
                         ));
-                    } else {
-                        TagAberta aberta = pilha.peek();
-                        if (!TagUtils.tagsEquivalentes(aberta.nome, tag.getNome())) {
-                            erros.add(new AnalysisError(
-                                    ErrorType.TAG_FINAL_INESPERADA,
-                                    String.format("Foi encontrada a tag final </%s>, mas era esperada a tag final </%s>.",
-                                            tag.getNome(), aberta.nome),
-                                    tag.getLinha(),
-                                    tag.getNome()
-                            ));
-                        } else {
+                        return erros;
+                    }
+
+                    TagAberta aberta = pilha.peek();
+                    if (TagUtils.tagsEquivalentes(aberta.nome, tag.getNome())) {
+                        pilha.pop();
+                    } else if (tagEstaAbertaNaPilha(pilha, tag.getNome())) {
+                        while (!pilha.isEmpty()
+                                && !TagUtils.tagsEquivalentes(pilha.peek().nome, tag.getNome())) {
+                            erros.add(criarErroTagNaoFinalizada(pilha.peek()));
                             pilha.pop();
                         }
+                        if (!pilha.isEmpty()) {
+                            pilha.pop();
+                        }
+                    } else {
+                        erros.add(new AnalysisError(
+                                ErrorType.TAG_FINAL_INESPERADA,
+                                String.format("Foi encontrada a tag final </%s>, mas era esperada a tag final </%s>.",
+                                        tag.getNome(), aberta.nome),
+                                tag.getLinha(),
+                                tag.getNome()
+                        ));
+                        return erros;
                     }
                     break;
 
@@ -84,20 +94,30 @@ public class HtmlValidator {
             }
         }
 
-        if (!pilha.isEmpty()) {
-            StringBuilder esperadas = new StringBuilder();
-            int primeiraLinha = pilha.peek().linha;
-            while (!pilha.isEmpty()) {
-                if (esperadas.length() > 0) {
-                    esperadas.append(", ");
-                }
-                esperadas.append("</").append(pilha.pop().nome).append(">");
-            }
-            erros.add(new AnalysisError(ErrorType.TAGS_NAO_FINALIZADAS,
-                    "Faltam tags finais no arquivo. Tags esperadas: " + esperadas + ".",
-                    primeiraLinha, esperadas.toString()));
+        while (!pilha.isEmpty()) {
+            erros.add(criarErroTagNaoFinalizada(pilha.peek()));
+            pilha.pop();
         }
 
-        return new java.util.ArrayList<>(erros);
+        return erros;
+    }
+
+    private AnalysisError criarErroTagNaoFinalizada(TagAberta aberta) {
+        return new AnalysisError(
+                ErrorType.TAGS_NAO_FINALIZADAS,
+                String.format("Falta a tag final </%s> após a linha %d.",
+                        aberta.nome, aberta.linha),
+                aberta.linha,
+                "</" + aberta.nome + ">"
+        );
+    }
+
+    private boolean tagEstaAbertaNaPilha(Stack<TagAberta> pilha, String nome) {
+        for (TagAberta aberta : pilha) {
+            if (TagUtils.tagsEquivalentes(aberta.nome, nome)) {
+                return true;
+            }
+        }
+        return false;
     }
 }
