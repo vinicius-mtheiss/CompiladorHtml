@@ -17,17 +17,27 @@ import java.util.Map;
 public class StatisticsService {
 
     /**
+     * Conta tags de abertura e autofechamento, ignorando fechamentos e malformadas.
+     */
+    public int contarTags(List<ParsedTag> tags) {
+        int total = 0;
+        for (ParsedTag tag : tags) {
+            if (deveIgnorarNaContagem(tag)) {
+                continue;
+            }
+            total++;
+        }
+        return total;
+    }
+
+    /**
      * Calcula frequência, tipo predominante e primeira ocorrência de cada tag.
      */
     public List<TagStatistics> gerarEstatisticas(List<ParsedTag> tags) {
         Map<String, ContadorTag> contadores = new HashMap<>();
 
         for (ParsedTag tag : tags) {
-            if ("?".equals(tag.getNome())) {
-                continue;
-            }
-
-            if (tag.getTipo() == TagType.FECHAMENTO) {
+            if (deveIgnorarNaContagem(tag)) {
                 continue;
             }
 
@@ -47,6 +57,10 @@ public class StatisticsService {
             resultado.add(estatistica);
         }
         return resultado;
+    }
+
+    private boolean deveIgnorarNaContagem(ParsedTag tag) {
+        return "?".equals(tag.getNome()) || tag.getTipo() == TagType.FECHAMENTO;
     }
 
     private static class ContadorTag {

@@ -68,13 +68,14 @@ public class AnalysisResult {
         relatorio.append("=== RELATÓRIO DE ANÁLISE HTML ===").append(System.lineSeparator());
         relatorio.append("Arquivo: ").append(caminhoArquivo).append(System.lineSeparator());
         relatorio.append("Linhas processadas: ").append(totalLinhas).append(System.lineSeparator());
-        relatorio.append("Total de tags: ").append(totalTags).append(System.lineSeparator());
+        relatorio.append("Total de tags (abertura/autofechamento): ").append(totalTags).append(System.lineSeparator());
         relatorio.append("Status: ").append(valido ? "VÁLIDO" : "INVÁLIDO").append(System.lineSeparator());
         relatorio.append(System.lineSeparator());
 
         if (!valido) {
             relatorio.append("--- ERROS ENCONTRADOS ---").append(System.lineSeparator());
             for (AnalysisError erro : erros) {
+                relatorio.append("(").append(erro.getTipo().getDescricao()).append(") ");
                 relatorio.append(erro).append(System.lineSeparator());
             }
             return relatorio.toString();

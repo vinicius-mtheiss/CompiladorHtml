@@ -31,6 +31,8 @@ public class HtmlValidatorTest {
         testarTagMultilinha();
         testarTagAbertaNaoFechadaSemCascata();
         testarVariasTagsAbertasNaoFechadas();
+        testarMensagensPadronizadas();
+        testarMultiplosErrosNoMesmoArquivo();
 
         System.out.println("HtmlValidatorTest: " + (falhas == 0 ? "TODOS PASSARAM" : falhas + " FALHA(S)"));
         if (falhas > 0) {
@@ -126,6 +128,7 @@ public class HtmlValidatorTest {
         HtmlValidator validator = new HtmlValidator();
         HtmlTagParser parser = new HtmlTagParser();
         List<AnalysisError> erros = validator.validar(parser.extrairTags(linhas));
+        assertTrue(erros.size() >= 1, "Deve detectar ao menos um erro");
         assertEquals(3, erros.get(0).getLinha(), "Linha em branco não altera numeração");
         assertTrue(erros.get(0).getMensagem().contains("era esperada a tag final </html>"),
                 "Mensagem de tag final inesperada");
@@ -167,9 +170,10 @@ public class HtmlValidatorTest {
         List<AnalysisError> erros = validator.validar(parser.extrairTags(linhas));
         assertEquals(1, erros.size(), "Deve retornar apenas um erro");
         assertEquals(ErrorType.TAGS_NAO_FINALIZADAS, erros.get(0).getTipo(), "Tipo correto");
-        assertEquals(4, erros.get(0).getLinha(), "Linha da abertura da ul");
-        assertTrue(erros.get(0).getMensagem().contains("Falta a tag final </ul> após a linha 4"),
-                "Mensagem aponta a tag não fechada");
+        assertEquals(
+                "Erro: Faltam tags finais no arquivo. Tags esperadas: </ul>",
+                erros.get(0).toString(),
+                "Mensagem padronizada de tag não finalizada");
     }
 
     private static void testarVariasTagsAbertasNaoFechadas() {
@@ -180,10 +184,93 @@ public class HtmlValidatorTest {
         HtmlTagParser parser = new HtmlTagParser();
         List<AnalysisError> erros = validator.validar(parser.extrairTags(linhas));
         assertEquals(2, erros.size(), "Deve retornar um erro para cada ul não fechada");
-        assertEquals(5, erros.get(0).getLinha(), "Primeira ul interna");
-        assertEquals(4, erros.get(1).getLinha(), "Segunda ul externa");
-        assertTrue(erros.get(0).getMensagem().contains("</ul>"), "Erro aponta ul");
-        assertTrue(erros.get(1).getMensagem().contains("</ul>"), "Erro aponta ul");
+        assertEquals(ErrorType.TAGS_NAO_FINALIZADAS, erros.get(0).getTipo(), "Primeiro erro");
+        assertEquals(ErrorType.TAGS_NAO_FINALIZADAS, erros.get(1).getTipo(), "Segundo erro");
+        assertTrue(erros.get(0).getMensagem().contains("Tags esperadas: </ul>"),
+                "Erro aponta ul");
+        assertTrue(erros.get(1).getMensagem().contains("Tags esperadas: </ul>"),
+                "Erro aponta ul");
+    }
+
+    private static void testarMensagensPadronizadas() {
+        HtmlValidator validator = new HtmlValidator();
+        HtmlTagParser parser = new HtmlTagParser();
+
+        List<AnalysisError> inesperada = validator.validar(parser.extrairTags(Arrays.asList(
+                "<p>", "</body>"
+        )));
+        assertEquals(
+                "Erro na linha 2: Foi encontrada a tag final </body>, mas era esperada a tag final </p>.",
+                inesperada.get(0).toString(),
+                "Mensagem de tag final inesperada");
+
+        List<AnalysisError> semAbertura = validator.validar(parser.extrairTags(Arrays.asList(
+                "</p>"
+        )));
+        assertEquals(
+                "Erro na linha 1: Foi encontrada a tag final </p>, mas não existe tag inicial correspondente.",
+                semAbertura.get(0).toString(),
+                "Mensagem de tag final sem tag inicial");
+
+        List<AnalysisError> naoFinalizadas = validator.validar(parser.extrairTags(Arrays.asList(
+                "<p>Texto"
+        )));
+        assertEquals(
+                "Erro: Faltam tags finais no arquivo. Tags esperadas: </p>",
+                naoFinalizadas.get(0).toString(),
+                "Mensagem de tags não finalizadas");
+
+        List<AnalysisError> malformada = validator.validar(parser.extrairTags(Arrays.asList(
+                "<html>", "<div class=\"teste\"", "</html>"
+        )));
+        assertEquals(
+                "Erro na linha 2: Foi encontrada uma tag malformada.",
+                malformada.get(0).toString(),
+                "Mensagem de tag malformada");
+    }
+
+    private static void testarMultiplosErrosNoMesmoArquivo() {
+        List<String> linhas = Arrays.asList(
+                "<ul",
+                "",
+                "<nav>",
+                "    <ul>",
+                "",
+                "<div>",
+                "    <ul>",
+                "</div>",
+                "</ul>"
+        );
+        HtmlValidator validator = new HtmlValidator();
+        HtmlTagParser parser = new HtmlTagParser();
+        List<AnalysisError> erros = validator.validar(parser.extrairTags(linhas));
+
+        assertTrue(erros.size() > 1, "Deve acumular múltiplos erros no mesmo arquivo");
+        assertEquals(ErrorType.TAG_MALFORMADA, erros.get(0).getTipo(), "Primeiro erro: malformada");
+        assertTrue(contemErroDoTipo(erros, ErrorType.TAGS_NAO_FINALIZADAS),
+                "Deve incluir tags não finalizadas");
+        assertTrue(contemMensagem(erros, "Tags esperadas: </ul>"),
+                "Deve apontar ul não finalizada");
+        assertTrue(contemMensagem(erros, "Tags esperadas: </nav>"),
+                "Deve apontar nav não finalizada");
+    }
+
+    private static boolean contemMensagem(List<AnalysisError> erros, String trecho) {
+        for (AnalysisError erro : erros) {
+            if (erro.getMensagem().contains(trecho)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean contemErroDoTipo(List<AnalysisError> erros, ErrorType tipo) {
+        for (AnalysisError erro : erros) {
+            if (erro.getTipo() == tipo) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static void assertTrue(boolean condicao, String mensagem) {

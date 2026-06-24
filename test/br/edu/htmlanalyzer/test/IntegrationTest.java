@@ -62,6 +62,12 @@ public class IntegrationTest {
                 .get()
                 .getFrequencia();
         assertTrue(frequenciaHtml == 1, "Fechamentos não entram na frequência");
+
+        int somaFrequencias = resultado.getEstatisticas().stream()
+                .mapToInt(estatistica -> estatistica.getFrequencia())
+                .sum();
+        assertTrue(resultado.getTotalTags() == somaFrequencias,
+                "Total de tags deve coincidir com a soma das frequências");
     }
 
     private static void assertTrue(boolean condicao, String mensagem) {

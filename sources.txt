@@ -1,5 +1,6 @@
 C:\Users\vinic\Downloads\tarbalhoFinalDados\src\br\edu\htmlanalyzer\Main.java
 C:\Users\vinic\Downloads\tarbalhoFinalDados\src\br\edu\htmlanalyzer\datastructure\MergeSort.java
+C:\Users\vinic\Downloads\tarbalhoFinalDados\src\br\edu\htmlanalyzer\datastructure\Queue.java
 C:\Users\vinic\Downloads\tarbalhoFinalDados\src\br\edu\htmlanalyzer\datastructure\Stack.java
 C:\Users\vinic\Downloads\tarbalhoFinalDados\src\br\edu\htmlanalyzer\model\AnalysisError.java
 C:\Users\vinic\Downloads\tarbalhoFinalDados\src\br\edu\htmlanalyzer\model\AnalysisResult.java
@@ -20,4 +21,5 @@ C:\Users\vinic\Downloads\tarbalhoFinalDados\test\br\edu\htmlanalyzer\test\AllTes
 C:\Users\vinic\Downloads\tarbalhoFinalDados\test\br\edu\htmlanalyzer\test\HtmlValidatorTest.java
 C:\Users\vinic\Downloads\tarbalhoFinalDados\test\br\edu\htmlanalyzer\test\IntegrationTest.java
 C:\Users\vinic\Downloads\tarbalhoFinalDados\test\br\edu\htmlanalyzer\test\MergeSortTest.java
+C:\Users\vinic\Downloads\tarbalhoFinalDados\test\br\edu\htmlanalyzer\test\QueueTest.java
 C:\Users\vinic\Downloads\tarbalhoFinalDados\test\br\edu\htmlanalyzer\test\StackTest.java

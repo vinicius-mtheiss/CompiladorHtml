@@ -54,7 +54,7 @@ public class HtmlAnalyzerService {
                 estatisticas,
                 raiz,
                 linhas.size(),
-                tags.size()
+                statisticsService.contarTags(tags)
         );
     }
 }

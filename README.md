@@ -9,7 +9,8 @@ Projeto acadêmico completo para análise estrutural de documentos HTML utilizan
 - Comparação de tags **case-insensitive**
 - Tags singleton não empilhadas: `meta`, `base`, `br`, `col`, `command`, `embed`, `hr`, `img`, `input`, `link`, `param`, `source`, `!doctype`
 - Validação estrutural com **Pilha** implementada manualmente
-- Detecção de erros: tag final inesperada, tag final sem abertura, tags não finalizadas e tag malformada
+- Detecção de erros padronizados: tag final inesperada, tag final sem tag inicial, tags não finalizadas e tag malformada
+- Armazenamento de erros em **Fila (Queue)** FIFO para exibição na ordem de detecção
 - Estatísticas (tag, frequência, tipo, 1ª ocorrência) ordenadas com **MergeSort manual**
 - Hierarquia do documento exibida **somente quando válido**
 - Interface gráfica Swing com abas: Relatório, Estatísticas e Hierarquia
@@ -29,6 +30,7 @@ br.edu.htmlanalyzer
 │   └── TagType.java
 ├── datastructure/               # Estruturas de dados manuais
 │   ├── MergeSort.java
+│   ├── Queue.java               # Fila FIFO (erros)
 │   └── Stack.java               # Pilha LIFO
 ├── parser/                      # Extração e validação
 │   ├── HtmlTagParser.java
@@ -60,6 +62,7 @@ tarbalhoFinalDados/
 | Estrutura | Uso | Implementação |
 |-----------|-----|---------------|
 | **Pilha (Stack)** | Validação de balanceamento de tags | Array dinâmico com `push`, `pop`, `peek` |
+| **Fila (Queue)** | Armazenamento e exibição ordenada de erros | Array circular com `enqueue`, `dequeue`, `peek` |
 | **MergeSort** | Ordenação alfabética das estatísticas | Divisão e conquista manual |
 | **Árvore (HtmlNode)** | Hierarquia do documento | Lista de filhos com indentação |
 | **HashMap** | Contagem de frequência de tags | API padrão Java |
@@ -129,6 +132,7 @@ java -cp out br.edu.htmlanalyzer.test.AllTests
 | Classe | Descrição |
 |--------|-----------|
 | `StackTest` | Operações push, pop, peek, redimensionamento |
+| `QueueTest` | Operações enqueue, dequeue, peek, ordem FIFO |
 | `MergeSortTest` | Ordenação de strings e TagStatistics |
 | `HtmlValidatorTest` | Todos os tipos de erro e casos válidos |
 | `IntegrationTest` | Arquivos de exemplo em `resources/samples/` |
@@ -140,7 +144,7 @@ java -cp out br.edu.htmlanalyzer.test.AllTests
 |---------|-------------------|
 | `valido.html` | Válido, com estatísticas e hierarquia |
 | `tag_final_inesperada.html` | Tag final inesperada |
-| `tag_sem_abertura.html` | Tag final sem abertura |
+| `tag_sem_abertura.html` | Tag final sem tag inicial |
 | `tags_nao_finalizadas.html` | Tags não finalizadas |
 | `tag_malformada.html` | Tag malformada |
 
