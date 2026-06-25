@@ -7,6 +7,7 @@ package br.edu.htmlanalyzer.service;
  * uma operação simples sem depender das classes especializadas internas.
  */
 
+import br.edu.htmlanalyzer.datastructure.Lista;
 import br.edu.htmlanalyzer.model.AnalysisError;
 import br.edu.htmlanalyzer.model.AnalysisResult;
 import br.edu.htmlanalyzer.model.HtmlNode;
@@ -17,7 +18,6 @@ import br.edu.htmlanalyzer.parser.HtmlValidator;
 import br.edu.htmlanalyzer.util.FileReaderUtil;
 
 import java.io.IOException;
-import java.util.List;
 
 /**
  * Orquestra leitura, parsing, validação, estatísticas e hierarquia.
@@ -48,16 +48,16 @@ public class HtmlAnalyzerService {
         }
 
         // Lê todas as linhas preservando sua ordem e numeração.
-        List<String> linhas = FileReaderUtil.lerLinhas(caminhoArquivo);
+        Lista<String> linhas = FileReaderUtil.lerLinhas(caminhoArquivo);
         // Converte os trechos HTML do texto em objetos que carregam nome, tipo e linha.
-        List<ParsedTag> tags = parser.extrairTags(linhas);
+        Lista<ParsedTag> tags = parser.extrairTags(linhas);
         // Acumula os erros estruturais encontrados na sequência de tags.
-        List<AnalysisError> erros = validator.validar(tags);
+        Lista<AnalysisError> erros = validator.validar(tags);
 
         // Um documento só é válido se nenhuma regra de validação gerou erro.
         boolean valido = erros.isEmpty();
         // Começam nulas porque não são geradas para um documento inválido.
-        List<TagStatistics> estatisticas = null;
+        Lista<TagStatistics> estatisticas = null;
         HtmlNode raiz = null;
 
         // Evita gerar resultados estruturais que poderiam ser enganosos para HTML incorreto.

@@ -7,12 +7,10 @@ package br.edu.htmlanalyzer.parser;
  * validador uma representação simples, sem misturar leitura e validação.
  */
 
+import br.edu.htmlanalyzer.datastructure.Lista;
 import br.edu.htmlanalyzer.model.ParsedTag;
 import br.edu.htmlanalyzer.model.TagType;
 import br.edu.htmlanalyzer.util.TagUtils;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Extrai tags HTML de linhas de texto, ignorando atributos na validação estrutural.
@@ -42,10 +40,10 @@ public class HtmlTagParser {
     /**
      * Extrai todas as tags válidas e malformadas de uma lista de linhas.
      */
-    public List<ParsedTag> extrairTags(List<String> linhas) {
+    public Lista<ParsedTag> extrairTags(Lista<String> linhas) {
         // Cria a coleção ordenada que será entregue ao validador.
-        List<ParsedTag> tags = new ArrayList<>();
-        // Controla a linha atual por índice, que em List começa em zero.
+        Lista<ParsedTag> tags = new Lista<>();
+        // Controla a linha atual por índice, que na Lista própria começa em zero.
         int indice = 0;
         // Controla a posição dentro da linha para encontrar mais de uma tag na mesma linha.
         int posicao = 0;
@@ -110,7 +108,7 @@ public class HtmlTagParser {
         return tags;
     }
 
-    private TagExtraction extrairTagCompleta(List<String> linhas, int indiceInicial, int inicioTag) {
+    private TagExtraction extrairTagCompleta(Lista<String> linhas, int indiceInicial, int inicioTag) {
         // Lê a linha onde o sinal '<' foi encontrado.
         String linha = linhas.get(indiceInicial);
         // Converte o índice interno de zero para o número de linha que o usuário vê.

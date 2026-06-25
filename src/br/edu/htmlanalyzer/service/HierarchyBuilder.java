@@ -7,13 +7,12 @@ package br.edu.htmlanalyzer.service;
  * de validar e de exibir; isso deixa cada etapa pequena e testável.
  */
 
+import br.edu.htmlanalyzer.datastructure.Lista;
 import br.edu.htmlanalyzer.datastructure.Stack;
 import br.edu.htmlanalyzer.model.HtmlNode;
 import br.edu.htmlanalyzer.model.ParsedTag;
 import br.edu.htmlanalyzer.model.TagType;
 import br.edu.htmlanalyzer.util.TagUtils;
-
-import java.util.List;
 
 /**
  * Constrói a árvore hierárquica do documento HTML quando este é válido.
@@ -27,7 +26,7 @@ public class HierarchyBuilder {
      * Monta a hierarquia a partir das tags parseadas.
      * Utiliza pilha auxiliar para rastrear o nó corrente.
      */
-    public HtmlNode construirHierarquia(List<ParsedTag> tags) {
+    public HtmlNode construirHierarquia(Lista<ParsedTag> tags) {
         // A raiz ainda é desconhecida antes de visitar a primeira tag utilizável.
         HtmlNode raiz = null;
         // Pilha acompanha o nó aberto que receberá os próximos filhos.

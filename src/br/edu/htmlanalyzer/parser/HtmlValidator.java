@@ -7,14 +7,13 @@ package br.edu.htmlanalyzer.parser;
  * válida são tarefas diferentes; esta classe recebe objetos ParsedTag prontos.
  */
 
+import br.edu.htmlanalyzer.datastructure.Lista;
 import br.edu.htmlanalyzer.datastructure.Queue;
 import br.edu.htmlanalyzer.datastructure.Stack;
 import br.edu.htmlanalyzer.model.AnalysisError;
 import br.edu.htmlanalyzer.model.ParsedTag;
 import br.edu.htmlanalyzer.model.TagType;
 import br.edu.htmlanalyzer.util.TagUtils;
-
-import java.util.List;
 
 /**
  * Valida o balanceamento estrutural de tags HTML utilizando uma Pilha.
@@ -42,7 +41,7 @@ public class HtmlValidator {
      * Valida a sequência de tags e retorna todos os erros encontrados.
      * Tags malformadas ou fechamentos inválidos são registrados e a análise continua.
      */
-    public List<AnalysisError> validar(List<ParsedTag> tags) {
+    public Lista<AnalysisError> validar(Lista<ParsedTag> tags) {
         // Fila conserva a ordem em que os erros foram detectados para o relatório.
         Queue<AnalysisError> erros = new Queue<>();
         // Pilha mantém a última tag aberta, que deve ser a próxima a fechar.
@@ -88,8 +87,8 @@ public class HtmlValidator {
             pilha.pop();
         }
 
-        // Materializa os erros em lista na mesma ordem FIFO em que foram enfileirados.
-        return erros.toList();
+        // Materializa os erros em lista própria na mesma ordem FIFO em que foram enfileirados.
+        return erros.toLista();
     }
 
     // Trata uma tag de fechamento comparando-a com as aberturas ainda pendentes.

@@ -1,8 +1,9 @@
 package br.edu.htmlanalyzer.datastructure;
 
 /**
- * SUMÁRIO DO ARQUIVO: oferece o algoritmo MergeSort para ordenar arrays de
- * objetos comparáveis em ordem crescente, sem depender da ordenação pronta.
+ * SUMÁRIO DO ARQUIVO: oferece o algoritmo MergeSort para ordenar listas
+ * próprias de objetos comparáveis em ordem crescente, sem arrays nem coleções
+ * prontas do Java.
  * POR QUE ESTÁ SEPARADO: ordenação é uma responsabilidade genérica, usada
  * pelas estatísticas sem acoplar o serviço à implementação do algoritmo.
  */
@@ -18,76 +19,73 @@ public final class MergeSort {
     }
 
     /**
-     * Ordena o array utilizando MergeSort (ordenação crescente).
+     * Ordena a lista utilizando MergeSort (ordenação crescente).
      */
-    public static <T extends Comparable<T>> void sort(T[] array) {
-        // Arrays nulos, vazios ou unitários já estão ordenados e não exigem trabalho.
-        if (array == null || array.length <= 1) {
+    public static <T extends Comparable<T>> void sort(Lista<T> lista) {
+        // Listas nulas, vazias ou unitárias já estão ordenadas e não exigem trabalho.
+        if (lista == null || lista.size() <= 1) {
             return;
         }
-        // Inicia a divisão recursiva cobrindo o primeiro e o último índice do array.
-        mergeSort(array, 0, array.length - 1);
-    }
-
-    // Divide recursivamente o intervalo informado até cada parte ter no máximo um elemento.
-    private static <T extends Comparable<T>> void mergeSort(T[] array, int inicio, int fim) {
-        // Um intervalo vazio ou de um único item já respeita a ordem.
-        if (inicio >= fim) {
-            return;
+        // Calcula a lista ordenada por divisão e intercalação.
+        Lista<T> ordenada = mergeSort(lista);
+        // Substitui o conteúdo original pelo resultado ordenado.
+        lista.clear();
+        for (T elemento : ordenada) {
+            lista.add(elemento);
         }
-        // Calcula o meio sem risco de somar índices grandes diretamente.
-        int meio = inicio + (fim - inicio) / 2;
-        // Ordena a metade esquerda.
-        mergeSort(array, inicio, meio);
-        // Ordena a metade direita.
-        mergeSort(array, meio + 1, fim);
-        // Une as duas metades ordenadas em um único trecho ordenado.
-        merge(array, inicio, meio, fim);
     }
 
-    @SuppressWarnings("unchecked")
-    private static <T extends Comparable<T>> void merge(T[] array, int inicio, int meio, int fim) {
-        // Calcula quantos elementos pertencem à metade esquerda, incluindo o meio.
-        int tamanhoEsquerda = meio - inicio + 1;
-        // Calcula quantos elementos restam na metade direita.
-        int tamanhoDireita = fim - meio;
+    // Divide recursivamente a lista até cada parte ter no máximo um elemento.
+    private static <T extends Comparable<T>> Lista<T> mergeSort(Lista<T> lista) {
+        if (lista.size() <= 1) {
+            return new Lista<>(lista);
+        }
 
-        // Cria um apoio temporário para cada metade; Comparable permite acomodar qualquer T comparável.
-        T[] esquerda = (T[]) new Comparable[tamanhoEsquerda];
-        T[] direita = (T[]) new Comparable[tamanhoDireita];
+        Lista<T> esquerda = new Lista<>();
+        Lista<T> direita = new Lista<>();
+        int meio = lista.size() / 2;
+        int indice = 0;
 
-        // Copia a primeira metade do array original para o apoio esquerdo.
-        System.arraycopy(array, inicio, esquerda, 0, tamanhoEsquerda);
-        // Copia a segunda metade para o apoio direito.
-        System.arraycopy(array, meio + 1, direita, 0, tamanhoDireita);
-
-        // Aponta para o próximo item ainda não combinado na esquerda.
-        int i = 0;
-        // Aponta para o próximo item ainda não combinado na direita.
-        int j = 0;
-        // Indica onde o próximo menor item deve ser escrito no array original.
-        int k = inicio;
-
-        // Compara enquanto ainda existirem candidatos nas duas metades.
-        while (i < tamanhoEsquerda && j < tamanhoDireita) {
-            // Em empate escolhe a esquerda, preservando a estabilidade da ordenação.
-            if (esquerda[i].compareTo(direita[j]) <= 0) {
-                // Copia a menor escolha e avança tanto a origem quanto o destino.
-                array[k++] = esquerda[i++];
+        for (T elemento : lista) {
+            if (indice < meio) {
+                esquerda.add(elemento);
             } else {
-                // Faz o mesmo quando o menor item pertence à metade direita.
-                array[k++] = direita[j++];
+                direita.add(elemento);
+            }
+            indice++;
+        }
+
+        return merge(mergeSort(esquerda), mergeSort(direita));
+    }
+
+    // Intercala duas listas já ordenadas preservando a estabilidade.
+    private static <T extends Comparable<T>> Lista<T> merge(Lista<T> esquerda, Lista<T> direita) {
+        Lista<T> resultado = new Lista<>();
+        int indiceEsquerda = 0;
+        int indiceDireita = 0;
+
+        while (indiceEsquerda < esquerda.size() && indiceDireita < direita.size()) {
+            T valorEsquerda = esquerda.get(indiceEsquerda);
+            T valorDireita = direita.get(indiceDireita);
+            if (valorEsquerda.compareTo(valorDireita) <= 0) {
+                resultado.add(valorEsquerda);
+                indiceEsquerda++;
+            } else {
+                resultado.add(valorDireita);
+                indiceDireita++;
             }
         }
 
-        // Se a direita acabou primeiro, transfere os itens restantes da esquerda.
-        while (i < tamanhoEsquerda) {
-            array[k++] = esquerda[i++];
+        while (indiceEsquerda < esquerda.size()) {
+            resultado.add(esquerda.get(indiceEsquerda));
+            indiceEsquerda++;
         }
 
-        // Se a esquerda acabou primeiro, transfere os itens restantes da direita.
-        while (j < tamanhoDireita) {
-            array[k++] = direita[j++];
+        while (indiceDireita < direita.size()) {
+            resultado.add(direita.get(indiceDireita));
+            indiceDireita++;
         }
+
+        return resultado;
     }
 }

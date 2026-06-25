@@ -7,16 +7,12 @@ package br.edu.htmlanalyzer.service;
  * validador e interface, que não precisam conhecer esses detalhes.
  */
 
+import br.edu.htmlanalyzer.datastructure.Lista;
 import br.edu.htmlanalyzer.datastructure.MergeSort;
 import br.edu.htmlanalyzer.model.ParsedTag;
 import br.edu.htmlanalyzer.model.TagStatistics;
 import br.edu.htmlanalyzer.model.TagType;
 import br.edu.htmlanalyzer.util.TagUtils;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 /**
  * Gera estatísticas de tags e ordena alfabeticamente com MergeSort.
@@ -26,7 +22,7 @@ public class StatisticsService {
     /**
      * Conta tags de abertura e autofechamento, ignorando fechamentos e malformadas.
      */
-    public int contarTags(List<ParsedTag> tags) {
+    public int contarTags(Lista<ParsedTag> tags) {
         // Começa a soma sem nenhuma tag contabilizada.
         int total = 0;
         // Examina cada tag que o parser encontrou no documento.
@@ -45,9 +41,9 @@ public class StatisticsService {
     /**
      * Calcula frequência, tipo predominante e primeira ocorrência de cada tag.
      */
-    public List<TagStatistics> gerarEstatisticas(List<ParsedTag> tags) {
-        // Mapeia cada nome de tag para o acumulador de suas informações.
-        Map<String, ContadorTag> contadores = new HashMap<>();
+    public Lista<TagStatistics> gerarEstatisticas(Lista<ParsedTag> tags) {
+        // Guarda os acumuladores em lista própria, substituindo o antigo mapa pronto.
+        Lista<ContadorTag> contadores = new Lista<>();
 
         // Percorre as tags em sua ordem de aparecimento no arquivo.
         for (ParsedTag tag : tags) {
@@ -58,28 +54,38 @@ public class StatisticsService {
 
             // Normaliza o nome, de forma que DIV e div acumulem no mesmo grupo.
             String chave = TagUtils.normalizar(tag.getNome());
+            // Busca manualmente o contador correspondente, sem mapa pronto do Java.
+            ContadorTag contador = localizarContador(contadores, chave);
             // Cria o contador somente na primeira ocorrência da chave.
-            ContadorTag contador = contadores.computeIfAbsent(chave, ContadorTag::new);
+            if (contador == null) {
+                contador = new ContadorTag(chave);
+                contadores.add(contador);
+            }
             // Atualiza frequência, primeira linha e tipo com a ocorrência atual.
             contador.registrar(tag);
         }
 
         // Converte cada acumulador em um objeto imutável apropriado para apresentação.
-        TagStatistics[] array = contadores.values().stream()
-                .map(ContadorTag::toStatistics)
-                .toArray(TagStatistics[]::new);
-
-        // Ordena alfabeticamente usando a implementação manual de MergeSort.
-        MergeSort.sort(array);
-
-        // Cria a lista final a partir do array já ordenado.
-        List<TagStatistics> resultado = new ArrayList<>();
-        // Mantém a ordem produzida pela ordenação ao copiar cada estatística.
-        for (TagStatistics estatistica : array) {
-            resultado.add(estatistica);
+        Lista<TagStatistics> resultado = new Lista<>();
+        for (ContadorTag contador : contadores) {
+            resultado.add(contador.toStatistics());
         }
+
+        // Ordena alfabeticamente usando a implementação manual de MergeSort para lista própria.
+        MergeSort.sort(resultado);
+
         // Devolve a coleção que o relatório e a interface poderão percorrer.
         return resultado;
+    }
+
+    // Procura em lista encadeada o contador de uma tag normalizada.
+    private ContadorTag localizarContador(Lista<ContadorTag> contadores, String chave) {
+        for (ContadorTag contador : contadores) {
+            if (contador.temTag(chave)) {
+                return contador;
+            }
+        }
+        return null;
     }
 
     // Decide se uma tag não deve entrar em totais nem em estatísticas.
@@ -99,11 +105,16 @@ public class StatisticsService {
         // Tipo encontrado para a tag contabilizada.
         private TagType tipo;
 
-        // Cria um acumulador recém-descoberto no mapa.
+        // Cria um acumulador recém-descoberto na lista.
         ContadorTag(String tag) {
             this.tag = tag;
             this.frequencia = 0;
             this.primeiraOcorrencia = Integer.MAX_VALUE;
+        }
+
+        // Informa se este acumulador pertence à tag procurada.
+        boolean temTag(String chave) {
+            return tag.equals(chave);
         }
 
         void registrar(ParsedTag parsedTag) {

@@ -18,7 +18,7 @@ import javax.swing.UIManager;
 public class Main {
 
     // Método chamado pela JVM para iniciar o programa.
-    public static void main(String[] args) {
+    public static void main(String... args) {
         // Agenda a criação da janela na Event Dispatch Thread, que é a thread segura do Swing.
         SwingUtilities.invokeLater(() -> {
             // Tenta usar a aparência nativa do sistema operacional.

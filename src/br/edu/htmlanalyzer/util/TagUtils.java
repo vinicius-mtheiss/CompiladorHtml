@@ -7,20 +7,10 @@ package br.edu.htmlanalyzer.util;
  * garante que todas comparem tags com o mesmo critério.
  */
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
-
 /**
  * Utilitários para normalização e classificação de tags HTML.
  */
 public final class TagUtils {
-
-    // Reúne nomes de tags HTML que não exigem uma tag de fechamento separada.
-    private static final Set<String> TAGS_SINGLETON = new HashSet<>(Arrays.asList(
-            "meta", "base", "br", "col", "command", "embed", "hr",
-            "img", "input", "link", "param", "source", "!doctype"
-    ));
 
     private TagUtils() {
         // Impede instanciar uma classe formada apenas por métodos e constantes utilitários.
@@ -29,7 +19,21 @@ public final class TagUtils {
 
     public static boolean isSingleton(String tag) {
         // Normaliza primeiro para que <BR> e <br> recebam a mesma classificação.
-        return TAGS_SINGLETON.contains(normalizar(tag));
+        String normalizada = normalizar(tag);
+        // Compara caso a caso para não depender de estruturas prontas.
+        return "meta".equals(normalizada)
+                || "base".equals(normalizada)
+                || "br".equals(normalizada)
+                || "col".equals(normalizada)
+                || "command".equals(normalizada)
+                || "embed".equals(normalizada)
+                || "hr".equals(normalizada)
+                || "img".equals(normalizada)
+                || "input".equals(normalizada)
+                || "link".equals(normalizada)
+                || "param".equals(normalizada)
+                || "source".equals(normalizada)
+                || "!doctype".equals(normalizada);
     }
 
     // Remove espaços extras e reduz para minúsculas, criando uma forma única de comparar tags.

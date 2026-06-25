@@ -4,15 +4,15 @@ package br.edu.htmlanalyzer.util;
  * SUMÁRIO DO ARQUIVO: lê um arquivo texto mantendo suas linhas e verifica se
  * o caminho aponta para uma extensão aceita pelo programa.
  * POR QUE ESTÁ SEPARADO: detalhes de sistema de arquivos não se misturam às
- * regras HTML; assim o serviço de análise recebe simplesmente uma lista linhas.
+ * regras HTML; assim o serviço de análise recebe simplesmente uma lista de linhas.
  */
+
+import br.edu.htmlanalyzer.datastructure.Lista;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Utilitário para leitura de arquivos linha a linha.
@@ -28,9 +28,9 @@ public final class FileReaderUtil {
      * Lê o arquivo linha a linha. Linhas em branco são preservadas para que a
      * numeração exibida nos erros corresponda ao arquivo selecionado.
      */
-    public static List<String> lerLinhas(String caminho) throws IOException {
+    public static Lista<String> lerLinhas(String caminho) throws IOException {
         // Cria a lista que preservará inclusive linhas em branco.
-        List<String> linhas = new ArrayList<>();
+        Lista<String> linhas = new Lista<>();
         // Transforma o texto do caminho em um objeto que permite consultar o sistema de arquivos.
         File arquivo = new File(caminho);
 

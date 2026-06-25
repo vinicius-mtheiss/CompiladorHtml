@@ -7,6 +7,7 @@ package br.edu.htmlanalyzer.ui;
  * dados; ela não lê, interpreta nem valida o HTML por conta própria.
  */
 
+import br.edu.htmlanalyzer.datastructure.Lista;
 import br.edu.htmlanalyzer.model.AnalysisResult;
 import br.edu.htmlanalyzer.model.TagStatistics;
 import br.edu.htmlanalyzer.service.HtmlAnalyzerService;
@@ -24,7 +25,7 @@ import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.filechooser.FileNameExtensionFilter;
-import javax.swing.table.DefaultTableModel;
+import javax.swing.table.AbstractTableModel;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -49,8 +50,8 @@ public class MainFrame extends JFrame {
     private final JTextArea areaHierarquia;
     // Componente de tabela que apresenta uma linha para cada estatística de tag.
     private final JTable tabelaEstatisticas;
-    // Modelo que armazena os dados da tabela e permite atualizar suas linhas.
-    private final DefaultTableModel modeloTabela;
+    // Modelo próprio que armazena os dados da tabela sem usar arrays ou coleções prontas.
+    private final StatisticsTableModel modeloTabela;
 
     // Monta e configura todos os componentes visuais que pertencem à janela principal.
     public MainFrame() {
@@ -77,14 +78,7 @@ public class MainFrame extends JFrame {
         areaHierarquia = criarTextArea();
 
         // Define colunas e comportamento do modelo que alimenta a tabela.
-        modeloTabela = new DefaultTableModel(
-                new String[]{"Tag", "Frequência", "Tipo", "1ª Ocorrência"}, 0) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                // Mantém a tabela somente para consulta, sem edição acidental pelo usuário.
-                return false;
-            }
-        };
+        modeloTabela = new StatisticsTableModel();
         // Vincula o modelo recém-criado à tabela visual.
         tabelaEstatisticas = new JTable(modeloTabela);
         // Ajusta uma altura legível para cada linha da tabela.
@@ -223,22 +217,13 @@ public class MainFrame extends JFrame {
     }
 
     private void preencherEstatisticas(AnalysisResult resultado) {
-        // Evita manter linhas da análise anterior misturadas com a atual.
-        limparEstatisticas();
-        // Converte cada estatística em uma linha com quatro células.
-        for (TagStatistics estatistica : resultado.getEstatisticas()) {
-            modeloTabela.addRow(new Object[]{
-                    estatistica.getTag(),
-                    estatistica.getFrequencia(),
-                    estatistica.getTipo().getDescricao(),
-                    estatistica.getPrimeiraOcorrencia()
-            });
-        }
+        // Entrega uma cópia das estatísticas para o modelo próprio da tabela.
+        modeloTabela.setEstatisticas(resultado.getEstatisticas());
     }
 
     private void limparEstatisticas() {
-        // Define zero linhas, removendo todo o conteúdo existente do modelo.
-        modeloTabela.setRowCount(0);
+        // Remove todas as linhas do modelo próprio.
+        modeloTabela.limpar();
     }
 
     private void preencherHierarquia(AnalysisResult resultado) {
@@ -248,6 +233,74 @@ public class MainFrame extends JFrame {
         // Mostra uma mensagem clara para o caso sem elementos hierárquicos disponíveis.
         } else {
             areaHierarquia.setText("Nenhuma hierarquia disponível.");
+        }
+    }
+
+    // Modelo de tabela escrito manualmente para evitar estruturas prontas.
+    private static class StatisticsTableModel extends AbstractTableModel {
+
+        // Lista própria com as linhas de estatísticas atualmente exibidas.
+        private Lista<TagStatistics> estatisticas = new Lista<>();
+
+        // Substitui as linhas existentes e avisa a JTable para redesenhar.
+        void setEstatisticas(Lista<TagStatistics> novasEstatisticas) {
+            estatisticas = new Lista<>(novasEstatisticas);
+            fireTableDataChanged();
+        }
+
+        // Esvazia o modelo para uma nova análise ou resultado inválido.
+        void limpar() {
+            estatisticas.clear();
+            fireTableDataChanged();
+        }
+
+        @Override
+        public int getRowCount() {
+            return estatisticas.size();
+        }
+
+        @Override
+        public int getColumnCount() {
+            return 4;
+        }
+
+        @Override
+        public String getColumnName(int column) {
+            switch (column) {
+                case 0:
+                    return "Tag";
+                case 1:
+                    return "Frequência";
+                case 2:
+                    return "Tipo";
+                case 3:
+                    return "1ª Ocorrência";
+                default:
+                    return "";
+            }
+        }
+
+        @Override
+        public Object getValueAt(int rowIndex, int columnIndex) {
+            TagStatistics estatistica = estatisticas.get(rowIndex);
+            switch (columnIndex) {
+                case 0:
+                    return estatistica.getTag();
+                case 1:
+                    return estatistica.getFrequencia();
+                case 2:
+                    return estatistica.getTipo().getDescricao();
+                case 3:
+                    return estatistica.getPrimeiraOcorrencia();
+                default:
+                    return "";
+            }
+        }
+
+        @Override
+        public boolean isCellEditable(int rowIndex, int columnIndex) {
+            // Mantém a tabela somente para consulta, sem edição acidental pelo usuário.
+            return false;
         }
     }
 }

@@ -7,9 +7,7 @@ package br.edu.htmlanalyzer.model;
  * análise ou a interface precisem conhecer detalhes da apresentação textual.
  */
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import br.edu.htmlanalyzer.datastructure.Lista;
 
 /**
  * Resultado consolidado da análise de um documento HTML.
@@ -21,9 +19,9 @@ public class AnalysisResult {
     // Indica se a validação terminou sem nenhum erro.
     private final boolean valido;
     // Guarda os diagnósticos na ordem em que foram encontrados.
-    private final List<AnalysisError> erros;
+    private final Lista<AnalysisError> erros;
     // Guarda as estatísticas disponíveis apenas para documentos válidos.
-    private final List<TagStatistics> estatisticas;
+    private final Lista<TagStatistics> estatisticas;
     // Guarda a raiz da árvore disponível apenas para documentos válidos.
     private final HtmlNode raiz;
     // Registra a quantidade de linhas lidas para o resumo.
@@ -33,8 +31,8 @@ public class AnalysisResult {
 
     public AnalysisResult(String caminhoArquivo,
                           boolean valido,
-                          List<AnalysisError> erros,
-                          List<TagStatistics> estatisticas,
+                          Lista<AnalysisError> erros,
+                          Lista<TagStatistics> estatisticas,
                           HtmlNode raiz,
                           int totalLinhas,
                           int totalTags) {
@@ -43,11 +41,11 @@ public class AnalysisResult {
         // Preserva o veredito calculado pelo serviço.
         this.valido = valido;
         // Copia os erros para impedir que uma lista externa altere o resultado depois de criado.
-        this.erros = new ArrayList<>(erros);
-        // Substitui estatísticas ausentes por lista vazia, evitando null para quem consultar o resultado.
+        this.erros = new Lista<>(erros);
+        // Substitui estatísticas ausentes por lista própria vazia, evitando null para quem consultar o resultado.
         this.estatisticas = estatisticas == null
-                ? Collections.emptyList()
-                : new ArrayList<>(estatisticas);
+                ? new Lista<TagStatistics>()
+                : new Lista<>(estatisticas);
         // Mantém a referência da árvore já construída pelo serviço especializado.
         this.raiz = raiz;
         // Armazena o total de linhas lidas.
@@ -66,14 +64,14 @@ public class AnalysisResult {
         return valido;
     }
 
-    public List<AnalysisError> getErros() {
-        // Impede que chamadores alterem a coleção interna de diagnósticos.
-        return Collections.unmodifiableList(erros);
+    public Lista<AnalysisError> getErros() {
+        // Entrega uma cópia para impedir que chamadores alterem os diagnósticos internos.
+        return new Lista<>(erros);
     }
 
-    public List<TagStatistics> getEstatisticas() {
-        // Impede que chamadores alterem as estatísticas guardadas no resultado.
-        return Collections.unmodifiableList(estatisticas);
+    public Lista<TagStatistics> getEstatisticas() {
+        // Entrega uma cópia para impedir que chamadores alterem as estatísticas internas.
+        return new Lista<>(estatisticas);
     }
 
     public HtmlNode getRaiz() {

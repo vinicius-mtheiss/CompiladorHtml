@@ -1,5 +1,12 @@
 package br.edu.htmlanalyzer.test;
 
+/**
+ * SUMÁRIO DO ARQUIVO: testa o fluxo completo com arquivos HTML reais da pasta
+ * resources/samples, do serviço até o objeto de resultado.
+ * POR QUE ESTÁ SEPARADO: diferente dos testes unitários, este confirma que as
+ * classes especializadas funcionam juntas e que os exemplos do projeto batem.
+ */
+
 import br.edu.htmlanalyzer.model.AnalysisResult;
 import br.edu.htmlanalyzer.service.HtmlAnalyzerService;
 
@@ -10,9 +17,12 @@ import java.io.File;
  */
 public class IntegrationTest {
 
+    // Acumula falhas detectadas nos cenários que usam arquivos reais.
     private static int falhas = 0;
 
-    public static void main(String[] args) throws Exception {
+    // Executa os arquivos de amostra e as regras que integram todas as camadas do sistema.
+    public static void main(String... args) throws Exception {
+        // Centraliza a pasta para que os nomes dos fixtures sejam mais legíveis abaixo.
         String base = "resources/samples/";
         testarArquivoValido(base + "valido.html");
         testarArquivoInvalido(base + "tag_final_inesperada.html");
@@ -28,6 +38,7 @@ public class IntegrationTest {
         }
     }
 
+    // Confirma que o fluxo completo produz todas as saídas para um HTML correto.
     private static void testarArquivoValido(String caminho) throws Exception {
         HtmlAnalyzerService service = new HtmlAnalyzerService();
         AnalysisResult resultado = service.analisar(new File(caminho).getPath());
@@ -36,6 +47,7 @@ public class IntegrationTest {
         assertTrue(resultado.getRaiz() != null, "Hierarquia gerada");
     }
 
+    // Confirma que um HTML incorreto produz erros e não gera árvore enganosa.
     private static void testarArquivoInvalido(String caminho) throws Exception {
         HtmlAnalyzerService service = new HtmlAnalyzerService();
         AnalysisResult resultado = service.analisar(new File(caminho).getPath());
@@ -44,6 +56,7 @@ public class IntegrationTest {
         assertTrue(resultado.getRaiz() == null, "Sem hierarquia para inválido");
     }
 
+    // Confirma que as tags aninhadas podem ser encontradas na representação da árvore.
     private static void testarHierarquiaApenasQuandoValido(String caminho) throws Exception {
         HtmlAnalyzerService service = new HtmlAnalyzerService();
         AnalysisResult resultado = service.analisar(new File(caminho).getPath());
@@ -53,23 +66,28 @@ public class IntegrationTest {
         assertTrue(hierarquia.contains("div"), "Hierarquia contém div");
     }
 
+    // Confirma que fechamentos não são contabilizados como novas ocorrências de uma tag.
     private static void testarFrequenciaSemFechamentos(String caminho) throws Exception {
         HtmlAnalyzerService service = new HtmlAnalyzerService();
         AnalysisResult resultado = service.analisar(new File(caminho).getPath());
-        int frequenciaHtml = resultado.getEstatisticas().stream()
-                .filter(estatistica -> "html".equals(estatistica.getTag()))
-                .findFirst()
-                .get()
-                .getFrequencia();
+        int frequenciaHtml = 0;
+        for (br.edu.htmlanalyzer.model.TagStatistics estatistica : resultado.getEstatisticas()) {
+            if ("html".equals(estatistica.getTag())) {
+                frequenciaHtml = estatistica.getFrequencia();
+                break;
+            }
+        }
         assertTrue(frequenciaHtml == 1, "Fechamentos não entram na frequência");
 
-        int somaFrequencias = resultado.getEstatisticas().stream()
-                .mapToInt(estatistica -> estatistica.getFrequencia())
-                .sum();
+        int somaFrequencias = 0;
+        for (br.edu.htmlanalyzer.model.TagStatistics estatistica : resultado.getEstatisticas()) {
+            somaFrequencias += estatistica.getFrequencia();
+        }
         assertTrue(resultado.getTotalTags() == somaFrequencias,
                 "Total de tags deve coincidir com a soma das frequências");
     }
 
+    // Registra uma falha quando a condição passada pelo cenário é falsa.
     private static void assertTrue(boolean condicao, String mensagem) {
         if (!condicao) {
             falhas++;

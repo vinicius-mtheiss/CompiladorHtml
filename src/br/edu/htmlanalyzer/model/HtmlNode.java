@@ -7,9 +7,7 @@ package br.edu.htmlanalyzer.model;
  * de montá-la quanto da interface que a exibe, facilitando reutilização.
  */
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import br.edu.htmlanalyzer.datastructure.Lista;
 
 /**
  * Nó da árvore hierárquica do documento HTML.
@@ -20,14 +18,14 @@ public class HtmlNode {
     private final String tag;
     // Referência ao elemento que contém este nó; é nula na raiz.
     private final HtmlNode pai;
-    // Lista mutável interna dos elementos diretamente contidos nesta tag.
-    private final List<HtmlNode> filhos;
+    // Lista própria interna dos elementos diretamente contidos nesta tag.
+    private final Lista<HtmlNode> filhos;
 
     // Cria um nó e prepara sua lista de filhos inicialmente vazia.
     public HtmlNode(String tag, HtmlNode pai) {
         this.tag = tag;
         this.pai = pai;
-        this.filhos = new ArrayList<>();
+        this.filhos = new Lista<>();
     }
 
     public String getTag() {
@@ -40,9 +38,9 @@ public class HtmlNode {
         return pai;
     }
 
-    public List<HtmlNode> getFilhos() {
-        // Retorna uma visão somente leitura para impedir alterações externas inconsistentes.
-        return Collections.unmodifiableList(filhos);
+    public Lista<HtmlNode> getFilhos() {
+        // Retorna uma cópia para impedir alterações externas inconsistentes.
+        return new Lista<>(filhos);
     }
 
     // Adiciona um filho durante a construção controlada da árvore.
